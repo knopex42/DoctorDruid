@@ -141,7 +141,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 <Frame name="DoctorDruid_Main" inherits="DDSF" toplevel="true" parent="UIParent" frameStrata="DIALOG" hidden="true" enableMouse="true">
 	<Scripts>
-		<OnShow>DD__Setupwindow(1)</OnShow>
+		<OnShow>DD__SetupWindow(1)</OnShow>
 		<OnLoad>DD__OnLoad()</OnLoad>
 		<OnEvent>DD__OnEvent(event)</OnEvent>
 	</Scripts>    
@@ -150,38 +150,38 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 	<Frames>
 	<Button name="$parent_Button1" inherits="DDBT">
 		<Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-30"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(2)</OnClick><OnShow>DD__SetText(187)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(2)</OnClick><OnShow>DD__SetText(187)</OnShow></Scripts>
 	</Button>
 	<Button name="$parent_Button2" inherits="DDBT">
 		<Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-50"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(3)</OnClick><OnShow>DD__SetText(188)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(3)</OnClick><OnShow>DD__SetText(188)</OnShow></Scripts>
 	</Button>
 	<Button name="$parent_Button3" inherits="DDBT">
 		<Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-70"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(4)</OnClick><OnShow>DD__SetText(189)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(4)</OnClick><OnShow>DD__SetText(189)</OnShow></Scripts>
 	</Button>
 	<Button name="$parent_Button4" inherits="DDBT">
 		<Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-90"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(5)</OnClick><OnShow>DD__SetText(190)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(5)</OnClick><OnShow>DD__SetText(190)</OnShow></Scripts>
 	</Button>
 	<Button name="$parent_Button5" inherits="DDBT">
 		<Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-110"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(6)</OnClick><OnShow>DD__SetText(191)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(6)</OnClick><OnShow>DD__SetText(191)</OnShow></Scripts>
 	</Button>
 	<Button name="$parent_Button6" inherits="DDBT">
 		<Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-130"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(8)</OnClick><OnShow>DD__SetText(136)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(8)</OnClick><OnShow>DD__SetText(136)</OnShow></Scripts>
 	</Button>
 
 	<Button name="$parent_Button7" inherits="DDBT">
 		<Size><AbsDimension x="80" y="20"/></Size>
 		<Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-10" y="10"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow()</OnClick><OnShow>DD__SetText(113)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow()</OnClick><OnShow>DD__SetText(113)</OnShow></Scripts>
 	</Button>
 	<Button name="$parent_Button8" inherits="DDBT">
 		<Size><AbsDimension x="80" y="20"/></Size>
 		<Anchors><Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="10" y="10"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(7)</OnClick><OnShow>DD__SetText(112)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(7)</OnClick><OnShow>DD__SetText(112)</OnShow></Scripts>
 	</Button>
 	</Frames>
 </Frame>
@@ -191,7 +191,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 
 <Frame name="DoctorDruid_Defaults" inherits="DDSF" toplevel="true" parent="UIParent" frameStrata="DIALOG" hidden="true" enableMouse="true">
-	<Scripts><OnShow>DD__Setupwindow(7)</OnShow></Scripts>    
+	<Scripts><OnShow>DD__SetupWindow(7)</OnShow></Scripts>    
 	<Size><AbsDimension x="480" y="95"/></Size>
 	<Frames>
 	<Frame name="$parent_MainFrame" inherits="OptionFrameBoxTemplate">
@@ -220,11 +220,11 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 	</Frame>
 	<Button name="$parent_ButtonYes" inherits="DDBT">
 		<Anchors><Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="20" y="16"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__DefaultSettings();DD__Setupwindow(1);DD__Print(DOCDRUID[198])</OnClick><OnShow>DD__SetText(196)</OnShow></Scripts>
+		<Scripts><OnClick>DD__DefaultSettings();DD__SetupWindow(1);DD__Print(DOCDRUID[198])</OnClick><OnShow>DD__SetText(196)</OnShow></Scripts>
 	</Button>
 	<Button name="$parent_ButtonNo" inherits="DDBT">
 		<Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-20" y="16"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(1)</OnClick><OnShow>DD__SetText(197)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(1)</OnClick><OnShow>DD__SetText(197)</OnShow></Scripts>
 	</Button>
 	</Frames>
 </Frame>
@@ -234,7 +234,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 
 <Frame name="DoctorDruid_General" inherits="DDSF" toplevel="true" parent="UIParent" frameStrata="DIALOG" hidden="true" enableMouse="true">
-	<Scripts><OnShow>DD__Setupwindow(2)</OnShow></Scripts>    
+	<Scripts><OnShow>DD__SetupWindow(2)</OnShow></Scripts>    
 	<Size><AbsDimension x="480" y="155"/></Size>
 	<Frames>
 	<Frame name="$parent_MainFrame" inherits="OptionFrameBoxTemplate">
@@ -288,7 +288,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 	</Frame>
 	<Button name="$parent_Button1" inherits="DDBT">
 		<Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-20" y="16"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
 	</Button>
 	</Frames>
 </Frame>
@@ -298,7 +298,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 
 <Frame name="DoctorDruid_Balance" inherits="DDSF" toplevel="true" parent="UIParent" frameStrata="DIALOG" hidden="true" enableMouse="true">
-	<Scripts><OnShow>DD__Setupwindow(6)</OnShow></Scripts>    
+	<Scripts><OnShow>DD__SetupWindow(6)</OnShow></Scripts>    
 	<Size><AbsDimension x="480" y="155"/></Size>
 	<Frames>
 	<Frame name="$parent_MainFrame" inherits="OptionFrameBoxTemplate">
@@ -355,7 +355,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 	</Frame>
 	<Button name="$parent_Button1" inherits="DDBT">
 		<Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-20" y="16"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
 	</Button>
 	</Frames>
 </Frame>
@@ -365,7 +365,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 
 <Frame name="DoctorDruid_Cat" inherits="DDSF" toplevel="true" parent="UIParent" frameStrata="DIALOG" hidden="true" enableMouse="true">
-	<Scripts><OnShow>DD__Setupwindow(4)</OnShow></Scripts>    
+	<Scripts><OnShow>DD__SetupWindow(4)</OnShow></Scripts>    
 	<Size><AbsDimension x="480" y="495"/></Size>
 	<Frames>
 	<Frame name="$parent_MainFrame" inherits="OptionFrameBoxTemplate">
@@ -707,7 +707,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 	</Frame>
 	<Button name="$parent_Button1" inherits="DDBT">
 		<Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-20" y="16"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
 	</Button>
 	</Frames>
 </Frame>
@@ -718,7 +718,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 
 <Frame name="DoctorDruid_Bear" inherits="DDSF" toplevel="true" parent="UIParent" frameStrata="DIALOG" hidden="true" enableMouse="true">
-	<Scripts><OnShow>DD__Setupwindow(5)</OnShow></Scripts>    
+	<Scripts><OnShow>DD__SetupWindow(5)</OnShow></Scripts>    
 	<Size><AbsDimension x="480" y="465"/></Size>
 	<Frames>
 	<Frame name="$parent_MainFrame" inherits="OptionFrameBoxTemplate">
@@ -863,7 +863,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 	</Frame>
 	<Button name="$parent_Button1" inherits="DDBT">
 		<Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-20" y="16"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
 	</Button>
 	</Frames>
 </Frame>
@@ -874,7 +874,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 
 <Frame name="DoctorDruid_Healing" inherits="DDSF" toplevel="true" parent="UIParent" frameStrata="DIALOG" hidden="true" enableMouse="true">
-	<Scripts><OnShow>DD__Setupwindow(3)</OnShow></Scripts>    
+	<Scripts><OnShow>DD__SetupWindow(3)</OnShow></Scripts>    
 	<Size><AbsDimension x="480" y="185"/></Size>
 	<Frames>
 	<Frame name="$parent_OptionsFrame" inherits="OptionFrameBoxTemplate">
@@ -942,7 +942,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 	<Button name="$parent_Button1" inherits="DDBT">
 		<Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-20" y="16"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(1)</OnClick><OnShow>DD__SetText(154)</OnShow></Scripts>
 	</Button>
 
 	</Frames>
@@ -952,7 +952,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 
 
 <Frame name="DoctorDruid_HealStats" inherits="DDSF" toplevel="true" parent="UIParent" frameStrata="DIALOG" hidden="true" enableMouse="true">
-	<Scripts><OnShow>DD__Setupwindow(8)</OnShow></Scripts>
+	<Scripts><OnShow>DD__SetupWindow(8)</OnShow></Scripts>
 	<Size><AbsDimension x="480" y="430"/></Size>
 	<Frames>
 
@@ -1070,7 +1070,7 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 	</Button>
 	<Button name="$parent_Button3" inherits="DDBT">
 		<Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-20" y="16"/></Offset></Anchor></Anchors>
-		<Scripts><OnClick>DD__Setupwindow(1)</OnClick><OnShow>DD__SetText(192)</OnShow></Scripts>
+		<Scripts><OnClick>DD__SetupWindow(1)</OnClick><OnShow>DD__SetText(192)</OnShow></Scripts>
 	</Button>
 
 	</Frames>
