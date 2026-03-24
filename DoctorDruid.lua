@@ -1,5 +1,15 @@
 DOCDRUID_TITLE = "Doctor Druid"; DOCDRUID_VERSION = "v1.1.9";
 
+-- Talent coefficient multipliers and item bonuses
+local TALENT_IMPROVED_HT = 0.1           -- Improved Healing Touch
+local TALENT_GIFT_OF_NATURE = 0.02       -- Gift of Nature
+local TALENT_MOONGLOW = 0.03             -- Moonglow
+local TALENT_IMPROVED_REJUV = 0.05       -- Improved Rejuvenation
+local ITEM_IDOL_BONUS = 0.15             -- Idol healing bonus
+local HOT_OUT_OF_COMBAT = 0.3            -- Regrowth HOT multiplier out-of-combat
+local HEALTH_LIMIT_NORMAL = 0.15         -- Normal health limit calculation
+local HEALTH_LIMIT_BOSS = 0.05           -- Boss health limit calculation
+
 BINDING_HEADER_DD_HEADER =	DOCDRUID_TITLE.." "..DOCDRUID_VERSION;
 BINDING_NAME_DD29  =		DOCDRUID[155]; -- Settings
 BINDING_NAME_DD1   =		DOCDRUID[1]; -- Healing Touch
@@ -196,20 +206,73 @@ function DoctorDruid_Init()
 	}
 end
 
+-- Helper function: Determine spell target (friendly or self)
+function DD__DetermineSpellTarget()
+	if UnitIsFriend("player", "target") then
+		return "target"
+	else
+		return "player"
+	end
+end
+
+-- Helper function: Check spell prerequisites (rank and readiness)
+function DD__CheckSpellPrerequisites(spellName, rankAttr)
+	if rankAttr < 1 then
+		DD__Print(spellName..DOCDRUID[43])
+		return false
+	end
+
+	if not DD__SpellReady(spellName) then
+		DD__Print(spellName..DOCDRUID[86])
+		return false
+	end
+
+	return true
+end
+
+-- Helper function: Reduce rank for available mana
+function DD__ReduceRankForMana(rank, dataTable)
+	local reduced = 0
+	if not DD__InstantCast() then
+		local playerMana = UnitMana("player")
+		if not playerMana then
+			return 0, 0
+		elseif rank > 0 and playerMana > 0 then
+			while dataTable[rank+1].mana and dataTable[rank+1].mana > playerMana and rank > 0 do
+				rank = rank - 1
+				reduced = reduced + 1
+			end
+		end
+	end
+	return rank, reduced
+end
+
+-- Helper function: Print and cast spell with rank and target
+function DD__PrintAndCastSpell(spellName, rank, spellRankTotal, targetUnit, dataTable, message)
+	local maximalmoeglich = ""
+	if rank > 0 then
+		if message then
+			DD__Print(message)
+		end
+		DD__CastSpell(spellName, rank)
+		SpellTargetUnit(targetUnit)
+	end
+end
+
 function DD__GetHealingTouch(plusheal)
 	return {
 		{ casterlvl = 0, cast = 0, instmin = 0, instmax = 0, mana = -1 },
-		{ casterlvl =  1, cast = 1.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(  40 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/33),    instmax = floor(  55 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/33),    mana = floor( 25 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl =  8, cast = 2.0 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(  94 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*28/89),   instmax = floor( 119 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*28/89),   mana = floor( 55 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 14, cast = 2.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 204 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*139/250), instmax = floor( 253 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*139/250), mana = floor(110 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 20, cast = 3.0 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 376 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*6/7),     instmax = floor( 459 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*6/7),     mana = floor(185 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 26, cast = 3.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 589 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         instmax = floor( 712 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         mana = floor(270 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 32, cast = 3.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 762 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         instmax = floor( 914 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         mana = floor(335 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 38, cast = 3.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 958 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         instmax = floor(1143 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         mana = floor(405 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 44, cast = 3.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(1225 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         instmax = floor(1453 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         mana = floor(495 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 50, cast = 3.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(1545 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         instmax = floor(1826 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         mana = floor(600 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 56, cast = 3.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(1916 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         instmax = floor(2257 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         mana = floor(720 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 60, cast = 3.5 - 0.1*SKILL__ImprovedHealingTouch - 0.15*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(2267 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         instmax = floor(2677 * (1 + 0.02*SKILL__GiftOfNature) + plusheal),         mana = floor(800 * (1 - 0.02*SKILL__TransquilSpirit) / (1 + 0.03*SKILL__Moonglow)) },
+		{ casterlvl =  1, cast = 1.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(  40 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/33),    instmax = floor(  55 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/33),    mana = floor( 25 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl =  8, cast = 2.0 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(  94 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*28/89),   instmax = floor( 119 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*28/89),   mana = floor( 55 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 14, cast = 2.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 204 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*139/250), instmax = floor( 253 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*139/250), mana = floor(110 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 20, cast = 3.0 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 376 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*6/7),     instmax = floor( 459 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*6/7),     mana = floor(185 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 26, cast = 3.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 589 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         instmax = floor( 712 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         mana = floor(270 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 32, cast = 3.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 762 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         instmax = floor( 914 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         mana = floor(335 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 38, cast = 3.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor( 958 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         instmax = floor(1143 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         mana = floor(405 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 44, cast = 3.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(1225 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         instmax = floor(1453 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         mana = floor(495 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 50, cast = 3.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(1545 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         instmax = floor(1826 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         mana = floor(600 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 56, cast = 3.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(1916 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         instmax = floor(2257 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         mana = floor(720 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 60, cast = 3.5 - TALENT_IMPROVED_HT*SKILL__ImprovedHealingTouch - ITEM_IDOL_BONUS*logic2value(DD__Idol==DOCDRUID[145]), instmin = floor(2267 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         instmax = floor(2677 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal),         mana = floor(800 * (1 - TALENT_GIFT_OF_NATURE*SKILL__TransquilSpirit) / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
 		{ casterlvl = 999 },
 	}
 end
@@ -217,17 +280,17 @@ end
 function DD__GetRejuvenation(plusheal)
 	return {
 		{ casterlvl = 0, subjectlvl = 0, hot = 0, mana = -1 },
-		{ casterlvl =  4, subjectlvl =  1, hot = floor(  32 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/12), mana = floor( 25 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 10, subjectlvl =  1, hot = floor(  56 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/8),  mana = floor( 40 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 16, subjectlvl =  6, hot = floor( 116 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/6),  mana = floor( 75 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 22, subjectlvl = 12, hot = floor( 180 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(105 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 28, subjectlvl = 18, hot = floor( 244 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(135 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 34, subjectlvl = 24, hot = floor( 304 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(160 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 40, subjectlvl = 30, hot = floor( 388 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(195 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 46, subjectlvl = 36, hot = floor( 488 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(235 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 52, subjectlvl = 42, hot = floor( 608 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(280 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 58, subjectlvl = 48, hot = floor( 756 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(335 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 60, subjectlvl = 54, hot = floor(1110 * (1 + 0.05*SKILL__ImprovedRejuvenation) * (1 + 0.02*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(360 / (1 + 0.03*SKILL__Moonglow)) },
+		{ casterlvl =  4, subjectlvl =  1, hot = floor(  32 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/12), mana = floor( 25 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 10, subjectlvl =  1, hot = floor(  56 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/8),  mana = floor( 40 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 16, subjectlvl =  6, hot = floor( 116 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/6),  mana = floor( 75 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 22, subjectlvl = 12, hot = floor( 180 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(105 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 28, subjectlvl = 18, hot = floor( 244 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(135 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 34, subjectlvl = 24, hot = floor( 304 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(160 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 40, subjectlvl = 30, hot = floor( 388 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(195 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 46, subjectlvl = 36, hot = floor( 488 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(235 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 52, subjectlvl = 42, hot = floor( 608 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(280 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 58, subjectlvl = 48, hot = floor( 756 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(335 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 60, subjectlvl = 54, hot = floor(1110 * (1 + TALENT_IMPROVED_REJUV*SKILL__ImprovedRejuvenation) * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*4/5),  mana = floor(360 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
 		{ casterlvl = 999 },
 	}
 end
@@ -235,15 +298,15 @@ end
 function DD__GetRegrowth(plusheal)
 	return {
 		{ casterlvl = 0, subjectlvl = 0, cast = 0, inst = 0, hot = 0, mana = -1 },
-		{ casterlvl = 12, subjectlvl =  2, cast = 2.0, instmin = floor(  93 * (1 + 0.02*SKILL__GiftOfNature) + plusheal/5),      instmax = floor( 107 * (1 + 0.02*SKILL__GiftOfNature) + plusheal/5),      hot = floor(  98 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/21), mana = floor(120 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 18, subjectlvl =  8, cast = 2.0, instmin = floor( 176 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*27/102), instmax = floor( 201 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*27/102), hot = floor( 175 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/15), mana = floor(205 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 24, subjectlvl = 14, cast = 2.0, instmin = floor( 255 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 290 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 259 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(280 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 30, subjectlvl = 20, cast = 2.0, instmin = floor( 336 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 378 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 343 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(350 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 36, subjectlvl = 26, cast = 2.0, instmin = floor( 425 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 478 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 427 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(420 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 42, subjectlvl = 32, cast = 2.0, instmin = floor( 534 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 599 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 546 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(510 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 48, subjectlvl = 38, cast = 2.0, instmin = floor( 672 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 751 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 686 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(615 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 54, subjectlvl = 44, cast = 2.0, instmin = floor( 839 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 935 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 861 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(740 / (1 + 0.03*SKILL__Moonglow)) },
-		{ casterlvl = 60, subjectlvl = 50, cast = 2.0, instmin = floor(1003 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor(1119 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor(1064 * (1 + 0.02*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(880 / (1 + 0.03*SKILL__Moonglow)) },
+		{ casterlvl = 12, subjectlvl =  2, cast = 2.0, instmin = floor(  93 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal/5),      instmax = floor( 107 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal/5),      hot = floor(  98 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/21), mana = floor(120 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 18, subjectlvl =  8, cast = 2.0, instmin = floor( 176 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*27/102), instmax = floor( 201 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*27/102), hot = floor( 175 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/15), mana = floor(205 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 24, subjectlvl = 14, cast = 2.0, instmin = floor( 255 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 290 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 259 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(280 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 30, subjectlvl = 20, cast = 2.0, instmin = floor( 336 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 378 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 343 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(350 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 36, subjectlvl = 26, cast = 2.0, instmin = floor( 425 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 478 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 427 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(420 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 42, subjectlvl = 32, cast = 2.0, instmin = floor( 534 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 599 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 546 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(510 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 48, subjectlvl = 38, cast = 2.0, instmin = floor( 672 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 751 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 686 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(615 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 54, subjectlvl = 44, cast = 2.0, instmin = floor( 839 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor( 935 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor( 861 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(740 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
+		{ casterlvl = 60, subjectlvl = 50, cast = 2.0, instmin = floor(1003 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  instmax = floor(1119 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*21/74),  hot = floor(1064 * (1 + TALENT_GIFT_OF_NATURE*SKILL__GiftOfNature) + plusheal*7/14), mana = floor(880 / (1 + TALENT_MOONGLOW*SKILL__Moonglow)) },
 		{ casterlvl = 999 },
 	}
 end
@@ -701,400 +764,425 @@ function DD__RemovePoisonCurse() -- Entgiften&Entfluchen
 end
 
 function DD__RemovePoison()
-	local t,d,reduced;
-	DoctorDruid_Update();
-	if DD__SpellRank.RemovePoison<1 then
-		DD__Print(DOCDRUID[72]..DOCDRUID[105]);
-		return;
+	local t, d
+	DoctorDruid_Update()
+
+	if DD__SpellRank.RemovePoison < 1 then
+		DD__Print(DOCDRUID[72]..DOCDRUID[105])
+		return
 	end
 
-	if UnitIsFriend("player","target") then
-		t = "target";
-	else
-		t = "player";
-	end
+	t = DD__DetermineSpellTarget()
 
 	if not DD__Poison(t) then
-		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[54]);
-		return;
+		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[54])
+		return
 	end
 
-	d = DD__SpellRank.RemovePoison;
-	while d>0 do
-		if UnitLevel(t)<ATTR__RemovePoison[d].subjectlvl then d = d - 1; else break; end
+	d = DD__SpellRank.RemovePoison
+	while d > 0 do
+		if UnitLevel(t) < ATTR__RemovePoison[d].subjectlvl then
+			d = d - 1
+		else
+			break
+		end
 	end
 
-	--local playersMana = UnitMana("player");
-	--if not playersMana then playersMana = 0; end
-
-	--if playersMana>=ATTR__RemovePoison[d].mana or DD__InstantCast() then
-		DD__Print(DD__UnitName(t)..DOCDRUID[55]..ATTR__RemovePoison[d].ddname);
-		DD__CastSpell(ATTR__RemovePoison[d].name);
-		SpellTargetUnit(t);
-	--else
-	--	DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[8]..DOCDRUID[53]);
-	--end
+	DD__Print(DD__UnitName(t)..DOCDRUID[55]..ATTR__RemovePoison[d].ddname)
+	DD__CastSpell(ATTR__RemovePoison[d].name)
+	SpellTargetUnit(t)
 end
 
 function DD__Thorns()
-	local d,t,reduced,maximalmoeglich,reducedtext;
-	DoctorDruid_Update();
-	if DD__SpellRank.Thorns<1 then
-		DD__Print(DOCDRUID[7]..DOCDRUID[43]);
-		return;
-	end
+	local d, t, reduced, maximalmoeglich, reducedtext
+	DoctorDruid_Update()
 
-	if not DD__SpellReady(DOCDRUID[7]) then
-		DD__Print(DOCDRUID[7]..DOCDRUID[86]);
-		return;
-	end
+	if not DD__CheckSpellPrerequisites(DOCDRUID[7], DD__SpellRank.Thorns) then return end
 
-	if UnitIsFriend("player","target") then
-		d = min(floor((UnitLevel("target")+6)/10)+1,DD__SpellRank.Thorns);
-		t = "target";
+	t = DD__DetermineSpellTarget()
+
+	if UnitIsFriend("player", "target") then
+		d = min(floor((UnitLevel("target")+6)/10)+1, DD__SpellRank.Thorns)
 	else
-		d = DD__SpellRank.Thorns;
-		t = "player";
+		d = DD__SpellRank.Thorns
 	end
 
-	if d==0 then return; end
+	if d == 0 then return end
 
-	reduced = 0;
-	if not DD__InstantCast() then
-		if not UnitMana("player") then
-			d = 0;
-		elseif d>0 and UnitMana("player")>0 then
-			while ATTR__Thorns[d+1].mana>UnitMana("player") and d>0 do d = d - 1; reduced = reduced + 1; end
-		end
-	end
+	d, reduced = DD__ReduceRankForMana(d, ATTR__Thorns)
 
-	if d==0 then
-		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[49]..DOCDRUID[53]);
-	elseif d>0 then
-		if (d+reduced)~=DD__SpellRank.Thorns then
-			maximalmoeglich = DOCDRUID[57]..(d+reduced)..DOCDRUID[58];
+	if d == 0 then
+		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[49]..DOCDRUID[53])
+	elseif d > 0 then
+		if (d+reduced) ~= DD__SpellRank.Thorns then
+			maximalmoeglich = DOCDRUID[57]..(d+reduced)..DOCDRUID[58]
 		else
-			maximalmoeglich = "";
+			maximalmoeglich = ""
 		end
-		if reduced>0 then reducedtext = DOCDRUID[56]..reduced..maximalmoeglich..DOCDRUID[59]; else reducedtext = ""; end
-		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[7]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Thorns..reducedtext);
-		DD__CastSpell(DOCDRUID[7],d);
-		SpellTargetUnit(t);
+		if reduced > 0 then
+			reducedtext = DOCDRUID[56]..reduced..maximalmoeglich..DOCDRUID[59]
+		else
+			reducedtext = ""
+		end
+		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[7]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Thorns..reducedtext)
+		DD__CastSpell(DOCDRUID[7], d)
+		SpellTargetUnit(t)
 	end
 end
 
 function DD__MarkOfTheWild()
-	local d,t,reduced,maximalmoeglich,reducedtext;
-	DoctorDruid_Update();
-	if DD__SpellRank.MarkOfTheWild<1 then
-		DD__Print(DOCDRUID[6]..DOCDRUID[43]);
-		return;
-	end
+	local d, t, reduced, maximalmoeglich, reducedtext
+	DoctorDruid_Update()
 
-	if not DD__SpellReady(DOCDRUID[6]) then
-		DD__Print(DOCDRUID[6]..DOCDRUID[86]);
-		return;
-	end
+	if not DD__CheckSpellPrerequisites(DOCDRUID[6], DD__SpellRank.MarkOfTheWild) then return end
+
+	t = DD__DetermineSpellTarget()
 
 	if UnitIsFriend("player", "target") then
-		d = min(floor(UnitLevel("target")/10)+2,DD__SpellRank.MarkOfTheWild);
-		t = "target";
+		d = min(floor(UnitLevel("target")/10)+2, DD__SpellRank.MarkOfTheWild)
 	else
-		d = DD__SpellRank.MarkOfTheWild;
-		t = "player";
+		d = DD__SpellRank.MarkOfTheWild
 	end
 
-	if d==0 then return; end
+	if d == 0 then return end
 
-	reduced = 0;
-	if not DD__InstantCast() then
-		if not UnitMana("player") then
-			d = 0;
-		elseif d>0 and UnitMana("player")>0 then
-			while ATTR__MarkOfTheWild[d+1].mana>UnitMana("player") and d>0 do d = d - 1; reduced = reduced + 1; end
-		end
-	end
+	d, reduced = DD__ReduceRankForMana(d, ATTR__MarkOfTheWild)
 
-	if d==0 then
-		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[49]..DOCDRUID[53]);
-	elseif d>0 then
-		if (d+reduced)~=DD__SpellRank.MarkOfTheWild then
-			maximalmoeglich = DOCDRUID[57]..d+reduced..DOCDRUID[58];
+	if d == 0 then
+		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[49]..DOCDRUID[53])
+	elseif d > 0 then
+		if (d+reduced) ~= DD__SpellRank.MarkOfTheWild then
+			maximalmoeglich = DOCDRUID[57]..d+reduced..DOCDRUID[58]
 		else
-			maximalmoeglich = "";
+			maximalmoeglich = ""
 		end
-		if reduced>0 then reducedtext = DOCDRUID[56]..reduced..maximalmoeglich..DOCDRUID[59]; else reducedtext = ""; end
-		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[6]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.MarkOfTheWild..reducedtext);
-		DD__CastSpell(DOCDRUID[6],d);
-		SpellTargetUnit(t);
+		if reduced > 0 then
+			reducedtext = DOCDRUID[56]..reduced..maximalmoeglich..DOCDRUID[59]
+		else
+			reducedtext = ""
+		end
+		DD__Print(DD__UnitName(t)..DOCDRUID[55]..DOCDRUID[6]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.MarkOfTheWild..reducedtext)
+		DD__CastSpell(DOCDRUID[6], d)
+		SpellTargetUnit(t)
 	end
 end
 
 function DD__Regrowth(noIncrease)
-	local dmaxonthistarget,t,missinghp,hptext,d,i,d_orig,maximalmoeglich,reducedtext;
-	DoctorDruid_Update();
-	if DD__SpellRank.Regrowth<1 then
-		DD__Print(DOCDRUID[3]..DOCDRUID[43]);
-		return;
-	end
+	local dmaxonthistarget, t, missinghp, hptext, d, i, d_orig, maximalmoeglich, reducedtext
+	DoctorDruid_Update()
 
-	if not DD__SpellReady(DOCDRUID[3]) then
-		DD__Print(DOCDRUID[3]..DOCDRUID[86]);
-		return;
-	end
+	if not DD__CheckSpellPrerequisites(DOCDRUID[3], DD__SpellRank.Regrowth) then return end
+
+	t = DD__DetermineSpellTarget()
 
 	if UnitIsFriend("player", "target") then
-		dmaxonthistarget = min(floor((UnitLevel("target")-2)/6)+1,DD__SpellRank.Regrowth);
-		t = "target";
+		dmaxonthistarget = min(floor((UnitLevel("target")-2)/6)+1, DD__SpellRank.Regrowth)
 	else
-		dmaxonthistarget = DD__SpellRank.Regrowth;
-		t = "player";
+		dmaxonthistarget = DD__SpellRank.Regrowth
 	end
 
-	if rDD("maxheal",1)~="0" then
-		missinghp = 999999;
-		hptext = DOCDRUID[62];
+	if rDD("maxheal", 1) ~= "0" then
+		missinghp = 999999
+		hptext = DOCDRUID[62]
 	else
-		if UnitHealthMax(t)==100 then
-			missinghp = DD__GuessUnitHealth(t, 20);
-			hptext = DOCDRUID[63]..missinghp..DOCDRUID[65];
+		if UnitHealthMax(t) == 100 then
+			missinghp = DD__GuessUnitHealth(t, 20)
+			hptext = DOCDRUID[63]..missinghp..DOCDRUID[65]
 		else
-			missinghp = UnitHealthMax(t) - UnitHealth(t);
-			hptext = DOCDRUID[63]..missinghp..DOCDRUID[64];
+			missinghp = UnitHealthMax(t) - UnitHealth(t)
+			hptext = DOCDRUID[63]..missinghp..DOCDRUID[64]
 		end
 	end
 
-	d = 0;
-	if dmaxonthistarget<DD__SpellRank.Regrowth then
-		i = dmaxonthistarget;
+	d = 0
+	if dmaxonthistarget < DD__SpellRank.Regrowth then
+		i = dmaxonthistarget
 	else
-		i = DD__SpellRank.Regrowth;
+		i = DD__SpellRank.Regrowth
 	end
-	while i>0 do
+
+	while i > 0 do
 		if UnitAffectingCombat(t) then
-			if missinghp>=(ATTR__Regrowth[i+1].instmin/2 + ATTR__Regrowth[i+1].instmax/2) then d = i; break; end
+			if missinghp >= (ATTR__Regrowth[i+1].instmin/2 + ATTR__Regrowth[i+1].instmax/2) then
+				d = i
+				break
+			end
 		else
-			if missinghp>=((ATTR__Regrowth[i+1].instmin/2 + ATTR__Regrowth[i+1].instmax/2)+(0.3 * ATTR__Regrowth[i+1].hot)) then d = i; break; end
+			if missinghp >= ((ATTR__Regrowth[i+1].instmin/2 + ATTR__Regrowth[i+1].instmax/2)+(HOT_OUT_OF_COMBAT * ATTR__Regrowth[i+1].hot)) then
+				d = i
+				break
+			end
 		end
-		i = i - 1;
+		i = i - 1
 	end
 
-	if DD__NaturesSwiftness() then noIncrease = 1; end
+	if DD__NaturesSwiftness() then noIncrease = 1 end
 
-	d_orig = d;
+	d_orig = d
 	if not noIncrease then
-		if d>0 then
+		if d > 0 then
 			if UnitAffectingCombat(t) then
-				if (d+1)<=dmaxonthistarget then d = d + 1; end
+				if (d+1) <= dmaxonthistarget then d = d + 1 end
 				if DD__instanceInfo() then
-					if (d+1)<=dmaxonthistarget and DD__instanceInfo().lvlmin>34 then d = d + 1; end
-					if (d+1)<=dmaxonthistarget and DD__instanceInfo().lvlmin>54 then d = d + 1; end
+					if (d+1) <= dmaxonthistarget and DD__instanceInfo().lvlmin > 34 then d = d + 1 end
+					if (d+1) <= dmaxonthistarget and DD__instanceInfo().lvlmin > 54 then d = d + 1 end
 				end
 			end
 		end
 	end
 
-	if DD__InstantCast() then d = dmaxonthistarget; end
+	if DD__InstantCast() then d = dmaxonthistarget end
 
-	if d==0 then
-		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[3]..DOCDRUID[66]);
-		return;
+	if d == 0 then
+		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[3]..DOCDRUID[66])
+		return
 	end
 
-	reduced = 0;
-	if not UnitMana("player") then
-		d = 0;
-	elseif d>0 and UnitMana("player")>0 and not DD__InstantCast() then
-		while ATTR__Regrowth[d+1].mana>UnitMana("player") and d>0 do d = d - 1; reduced = reduced + 1; end
+	reduced = 0
+	local playerMana = UnitMana("player")
+	if not playerMana then
+		d = 0
+	elseif d > 0 and playerMana > 0 and not DD__InstantCast() then
+		while ATTR__Regrowth[d+1].mana > playerMana and d > 0 do
+			d = d - 1
+			reduced = reduced + 1
+		end
 	end
 
-	if d==0 then
-		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[3]..DOCDRUID[53]);
-	elseif d>0 then
-		if (d+reduced)~=DD__SpellRank.Regrowth then
-			maximalmoeglich = DOCDRUID[57]..d+reduced..DOCDRUID[58];
+	if d == 0 then
+		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[3]..DOCDRUID[53])
+	elseif d > 0 then
+		if (d+reduced) ~= DD__SpellRank.Regrowth then
+			maximalmoeglich = DOCDRUID[57]..d+reduced..DOCDRUID[58]
 		else
-			maximalmoeglich = "";
+			maximalmoeglich = ""
 		end
-		if reduced>0 then reducedtext = DOCDRUID[56]..reduced..maximalmoeglich..DOCDRUID[59];
-		elseif (d-d_orig)>0 then reducedtext = DOCDRUID[68]..(d-d_orig)..DOCDRUID[69];
-		else reducedtext = "";
+
+		if reduced > 0 then
+			reducedtext = DOCDRUID[56]..reduced..maximalmoeglich..DOCDRUID[59]
+		elseif (d-d_orig) > 0 then
+			reducedtext = DOCDRUID[68]..(d-d_orig)..DOCDRUID[69]
+		else
+			reducedtext = ""
 		end
+
 		if DD__InstantCast() then
-			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[3]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Regrowth..DOCDRUID[70]..DD__MaxHeal_Use().." ["..ATTR__Regrowth[d+1].instmin.."-"..ATTR__Regrowth[d+1].instmax..DOCDRUID[227]..", "..ATTR__Regrowth[d+1].hot..DOCDRUID[228].."]");
+			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[3]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Regrowth..DOCDRUID[70]..DD__MaxHeal_Use().." ["..ATTR__Regrowth[d+1].instmin.."-"..ATTR__Regrowth[d+1].instmax..DOCDRUID[227]..", "..ATTR__Regrowth[d+1].hot..DOCDRUID[228].."]")
 		else
-			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[3]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Regrowth..reducedtext..DD__MaxHeal_Use().." ["..ATTR__Regrowth[d+1].instmin.."-"..ATTR__Regrowth[d+1].instmax..DOCDRUID[227]..", "..ATTR__Regrowth[d+1].hot..DOCDRUID[228].."]");
+			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[3]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Regrowth..reducedtext..DD__MaxHeal_Use().." ["..ATTR__Regrowth[d+1].instmin.."-"..ATTR__Regrowth[d+1].instmax..DOCDRUID[227]..", "..ATTR__Regrowth[d+1].hot..DOCDRUID[228].."]")
 		end
-		DD__CastSpell(DOCDRUID[3],d);
-		SpellTargetUnit(t);
+
+		DD__CastSpell(DOCDRUID[3], d)
+		SpellTargetUnit(t)
 	end
 end
 
 function DD__Rejuvenation()
-	local dmaxonthistarget,t,d,hptext,missinghp,i,reduced,maximalmoeglich,reducedtext;
-	DoctorDruid_Update();
-	if DD__SpellRank.Rejuvenation<1 then
-		DD__Print(DOCDRUID[5]..DOCDRUID[43]);
-		return;
-	end
+	local dmaxonthistarget, t, d, hptext, missinghp, i, reduced, maximalmoeglich, reducedtext
+	DoctorDruid_Update()
 
-	if not DD__SpellReady(DOCDRUID[5]) then
-		DD__Print(DOCDRUID[5]..DOCDRUID[86]);
-		return;
-	end
+	if not DD__CheckSpellPrerequisites(DOCDRUID[5], DD__SpellRank.Rejuvenation) then return end
+
+	t = DD__DetermineSpellTarget()
 
 	if UnitIsFriend("player", "target") then
-		dmaxonthistarget = max(min(floor(UnitLevel("target")/6)+2,DD__SpellRank.Rejuvenation),1);
-		t = "target";
+		dmaxonthistarget = max(min(floor(UnitLevel("target")/6)+2, DD__SpellRank.Rejuvenation), 1)
 	else
-		dmaxonthistarget = DD__SpellRank.Rejuvenation;
-		t = "player";
+		dmaxonthistarget = DD__SpellRank.Rejuvenation
 	end
 
 	if UnitAffectingCombat(t) then
-		d = dmaxonthistarget;
-		hptext = DOCDRUID[71];
+		d = dmaxonthistarget
+		hptext = DOCDRUID[71]
 	else
-		if rDD("maxheal",1)~="0" then
-			missinghp = 999999;
-			hptext = DOCDRUID[62];
+		if rDD("maxheal", 1) ~= "0" then
+			missinghp = 999999
+			hptext = DOCDRUID[62]
 		else
-			if UnitHealthMax(t)==100 then
-				missinghp = DD__GuessUnitHealth(t, 20);
-				hptext = DOCDRUID[63]..missinghp..DOCDRUID[65];
+			if UnitHealthMax(t) == 100 then
+				missinghp = DD__GuessUnitHealth(t, 20)
+				hptext = DOCDRUID[63]..missinghp..DOCDRUID[65]
 			else
-				missinghp = UnitHealthMax(t) - UnitHealth(t);
-				hptext = DOCDRUID[63]..missinghp..DOCDRUID[64];
+				missinghp = UnitHealthMax(t) - UnitHealth(t)
+				hptext = DOCDRUID[63]..missinghp..DOCDRUID[64]
 			end
 		end
-		d = 0;
-		if dmaxonthistarget<DD__SpellRank.Rejuvenation then
-			i = dmaxonthistarget;
+
+		d = 0
+		if dmaxonthistarget < DD__SpellRank.Rejuvenation then
+			i = dmaxonthistarget
 		else
-			i = DD__SpellRank.Rejuvenation;
+			i = DD__SpellRank.Rejuvenation
 		end
-		while i>0 do
-			if missinghp>=ATTR__Rejuvenation[i+1].hot then d = i; break; end
-			i = i - 1;
+
+		while i > 0 do
+			if missinghp >= ATTR__Rejuvenation[i+1].hot then
+				d = i
+				break
+			end
+			i = i - 1
 		end
 	end
 
-	if DD__InstantCast() then d = dmaxonthistarget; end
+	if DD__InstantCast() then d = dmaxonthistarget end
 
-	if d==0 then
-		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[5]..DOCDRUID[66]);
-		return;
+	if d == 0 then
+		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[5]..DOCDRUID[66])
+		return
 	end
 
-	reduced = 0;
-	if not UnitMana("player") then
-		d = 0;
-	elseif d>0 and UnitMana("player")>0 and not DD__InstantCast() then
-		while ATTR__Rejuvenation[d+1].mana>UnitMana("player") and d>0 do d = d - 1; reduced = reduced + 1; end
+	reduced = 0
+	local playerMana = UnitMana("player")
+	if not playerMana then
+		d = 0
+	elseif d > 0 and playerMana > 0 and not DD__InstantCast() then
+		while ATTR__Rejuvenation[d+1].mana > playerMana and d > 0 do
+			d = d - 1
+			reduced = reduced + 1
+		end
 	end
 
-	if d==0 then
-		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[5]..DOCDRUID[53]);
-	elseif d>0 then
-		if (d+reduced)~=DD__SpellRank.Rejuvenation then
-			maximalmoeglich = DOCDRUID[57]..d+reduced..DOCDRUID[58];
+	if d == 0 then
+		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[5]..DOCDRUID[53])
+	elseif d > 0 then
+		if (d+reduced) ~= DD__SpellRank.Rejuvenation then
+			maximalmoeglich = DOCDRUID[57]..d+reduced..DOCDRUID[58]
 		else
-			maximalmoeglich = "";
+			maximalmoeglich = ""
 		end
-		if reduced>0 then reducedtext = DOCDRUID[56]..reduced..maximalmoeglich..DOCDRUID[59]; else reducedtext = ""; end
+
+		if reduced > 0 then
+			reducedtext = DOCDRUID[56]..reduced..maximalmoeglich..DOCDRUID[59]
+		else
+			reducedtext = ""
+		end
+
 		if DD__InstantCast() then
-			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[5]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Rejuvenation..DOCDRUID[70]..DD__MaxHeal_Use().." [+"..ATTR__Rejuvenation[d+1].hot.."]");
+			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[5]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Rejuvenation..DOCDRUID[70]..DD__MaxHeal_Use().." [+"..ATTR__Rejuvenation[d+1].hot.."]")
 		else
-			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[5]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Rejuvenation..reducedtext..DD__MaxHeal_Use().." [+"..ATTR__Rejuvenation[d+1].hot.."]");
+			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[5]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.Rejuvenation..reducedtext..DD__MaxHeal_Use().." [+"..ATTR__Rejuvenation[d+1].hot.."]")
 		end
-		DD__CastSpell(DOCDRUID[5],d);
-		SpellTargetUnit(t);
+
+		DD__CastSpell(DOCDRUID[5], d)
+		SpellTargetUnit(t)
 	end
 end
 
-function DD__HealingTouch(noIncrease,maxrank)
-	local t,missinghp,hptext,d,i,d_orig,reduced,reducedtext,internalmaxrank;
-	DoctorDruid_Update();
+function DD__HealingTouch(noIncrease, maxrank)
+	local t, missinghp, hptext, d, i, d_orig, reduced, reducedtext, internalmaxrank
+	DoctorDruid_Update()
 
-	if DD__SpellRank.HealingTouch<1 then
-		DD__Print(DOCDRUID[1]..DOCDRUID[43]);
-		return;
-	end
+	if not DD__CheckSpellPrerequisites(DOCDRUID[1], DD__SpellRank.HealingTouch) then return end
 
-	if not DD__SpellReady(DOCDRUID[1]) then
-		DD__Print(DOCDRUID[1]..DOCDRUID[86]);
-		return;
-	end
+	t = DD__DetermineSpellTarget()
 
-	if UnitIsFriend("player", "target") then
-		t = "target";
+	if UnitHealthMax(t) == 100 then
+		missinghp = DD__GuessUnitHealth(t, 20)
+		hptext = DOCDRUID[63]..missinghp..DOCDRUID[65]
 	else
-		t = "player";
+		missinghp = UnitHealthMax(t) - UnitHealth(t)
+		hptext = DOCDRUID[63]..missinghp..DOCDRUID[64]
 	end
 
-	if UnitHealthMax(t)==100 then
-		missinghp = DD__GuessUnitHealth(t, 20);
-		hptext = DOCDRUID[63]..missinghp..DOCDRUID[65];
-	else
-		missinghp = UnitHealthMax(t) - UnitHealth(t);
-		hptext = DOCDRUID[63]..missinghp..DOCDRUID[64];
-	end
-
-	d,i = 0,DD__SpellRank.HealingTouch; if maxrank then if maxrank>1 and i>maxrank then i = maxrank; end end
-	while i>0 do
-		if UnitAffectingCombat(t) then
-			if missinghp>=ATTR__HealingTouch[i+1].instmin then d = i; break; end
-		else
-			if missinghp>=(ATTR__HealingTouch[i+1].instmin/2 + ATTR__HealingTouch[i+1].instmax/2) then d = i; break; end
+	d, i = 0, DD__SpellRank.HealingTouch
+	if maxrank then
+		if maxrank > 1 and i > maxrank then
+			i = maxrank
 		end
-		i = i - 1;
 	end
 
-	if DD__NaturesSwiftness() then noIncrease = "sdn"; end
+	while i > 0 do
+		if UnitAffectingCombat(t) then
+			if missinghp >= ATTR__HealingTouch[i+1].instmin then
+				d = i
+				break
+			end
+		else
+			if missinghp >= (ATTR__HealingTouch[i+1].instmin/2 + ATTR__HealingTouch[i+1].instmax/2) then
+				d = i
+				break
+			end
+		end
+		i = i - 1
+	end
 
-	d_orig = d; if not maxrank then internalmaxrank = DD__SpellRank.HealingTouch; else internalmaxrank = maxrank; end
+	if DD__NaturesSwiftness() then noIncrease = "sdn" end
+
+	d_orig = d
+	if not maxrank then
+		internalmaxrank = DD__SpellRank.HealingTouch
+	else
+		internalmaxrank = maxrank
+	end
+
 	if not noIncrease then
-		if d>0 then
+		if d > 0 then
 			if UnitAffectingCombat(t) then
-				if (d+1)<=internalmaxrank then d = d + 1; end
+				if (d+1) <= internalmaxrank then d = d + 1 end
 				if DD__instanceInfo() then
-					if (d+1)<=internalmaxrank and DD__instanceInfo().lvlmin>34 then d = d + 1; end
+					if (d+1) <= internalmaxrank and DD__instanceInfo().lvlmin > 34 then d = d + 1 end
 				end
 			end
 		end
 	else
-		if UnitAffectingCombat(t) and noIncrease=="sdn" and (d+1)<=internalmaxrank then d = d + 1; end
-	end
-
-	if DD__InstantCast() then d = internalmaxrank; end
-
-	if d==0 then
-		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[1]..DOCDRUID[66]);
-		return;
-	end
-
-	reduced = 0;
-	if not UnitMana("player") then
-		d = 0;
-	elseif d>0 and UnitMana("player")>0 and not DD__InstantCast() then
-		while ATTR__HealingTouch[d+1].mana>UnitMana("player") and d>0 do d = d - 1; reduced = reduced + 1; end
-	end
-
-	if d==0 then
-		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[1]..DOCDRUID[53]);
-	elseif d>0 then
-		if reduced>0 then reducedtext = DOCDRUID[56]..reduced..DOCDRUID[59];
-		elseif (d-d_orig)>0 then reducedtext = DOCDRUID[68]..(d-d_orig)..DOCDRUID[69];
-		else reducedtext = "";
+		if UnitAffectingCombat(t) and noIncrease == "sdn" and (d+1) <= internalmaxrank then
+			d = d + 1
 		end
-		if DD__InstantCast() then
-			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[1]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.HealingTouch..DOCDRUID[70].." ["..ATTR__HealingTouch[d+1].instmin.."-"..ATTR__HealingTouch[d+1].instmax.."]");
+	end
+
+	if DD__InstantCast() then d = internalmaxrank end
+
+	if d == 0 then
+		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[1]..DOCDRUID[66])
+		return
+	end
+
+	reduced = 0
+	local playerMana = UnitMana("player")
+	if not playerMana then
+		d = 0
+	elseif d > 0 and playerMana > 0 and not DD__InstantCast() then
+		while ATTR__HealingTouch[d+1].mana > playerMana and d > 0 do
+			d = d - 1
+			reduced = reduced + 1
+		end
+	end
+
+	if d == 0 then
+		DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[52]..DOCDRUID[1]..DOCDRUID[53])
+	elseif d > 0 then
+		if reduced > 0 then
+			reducedtext = DOCDRUID[56]..reduced..DOCDRUID[59]
+		elseif (d-d_orig) > 0 then
+			reducedtext = DOCDRUID[68]..(d-d_orig)..DOCDRUID[69]
 		else
-			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[1]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.HealingTouch..reducedtext.." ["..ATTR__HealingTouch[d+1].instmin.."-"..ATTR__HealingTouch[d+1].instmax.."]");
+			reducedtext = ""
 		end
-		DD__CastSpell(DOCDRUID[1],d);
-		SpellTargetUnit(t);
+
+		if DD__InstantCast() then
+			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[1]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.HealingTouch..DOCDRUID[70].." ["..ATTR__HealingTouch[d+1].instmin.."-"..ATTR__HealingTouch[d+1].instmax.."]")
+		else
+			DD__Print(DD__UnitName(t)..hptext..DOCDRUID[55]..DOCDRUID[1]..DOCDRUID[60]..d..DOCDRUID[61]..DD__SpellRank.HealingTouch..reducedtext.." ["..ATTR__HealingTouch[d+1].instmin.."-"..ATTR__HealingTouch[d+1].instmax.."]")
+		end
+
+		DD__CastSpell(DOCDRUID[1], d)
+		SpellTargetUnit(t)
 	end
+end
+
+function DD__CalculateEnemyHealthLimit()
+	local limit = HEALTH_LIMIT_NORMAL
+	if UnitLevel("target")==-1 then limit = HEALTH_LIMIT_BOSS end
+	if DD__instanceInfo() then
+		limit = limit * UnitLevel("player") / (DD__instanceInfo().lvlmax + DD__instanceInfo().diff)
+	else
+		if UnitLevel("target")==-1 then
+			limit = limit * UnitLevel("player") / (UnitLevel("player")+10)
+		else
+			limit = limit * UnitLevel("player") / UnitLevel("target")
+		end
+	end
+	return floor(100 * limit) / 100
 end
 
 function DD__GuessUnitHealth(t, max_estimationerror_percentage)
@@ -1267,21 +1355,9 @@ function DD__Print(msg,color)
 	if window<1 or window>15 then window = 0; wDD("outputtextto",0); end
 	if color then msg = color..msg.."|cffffffff"; end
 
-	if window==1 and ChatFrame1 then ChatFrame1:AddMessage(msg);
-	elseif window==2 and ChatFrame2 then ChatFrame2:AddMessage(msg);
-	elseif window==3 and ChatFrame3 then ChatFrame3:AddMessage(msg);
-	elseif window==4 and ChatFrame4 then ChatFrame4:AddMessage(msg);
-	elseif window==5 and ChatFrame5 then ChatFrame5:AddMessage(msg);
-	elseif window==6 and ChatFrame6 then ChatFrame6:AddMessage(msg);
-	elseif window==7 and ChatFrame7 then ChatFrame7:AddMessage(msg);
-	elseif window==8 and ChatFrame8 then ChatFrame8:AddMessage(msg);
-	elseif window==9 and ChatFrame9 then ChatFrame9:AddMessage(msg);
-	elseif window==10 and ChatFrame10 then ChatFrame10:AddMessage(msg);
-	elseif window==11 and ChatFrame11 then ChatFrame11:AddMessage(msg);
-	elseif window==12 and ChatFrame12 then ChatFrame12:AddMessage(msg);
-	elseif window==13 and ChatFrame13 then ChatFrame13:AddMessage(msg);
-	elseif window==14 and ChatFrame14 then ChatFrame14:AddMessage(msg);
-	elseif window==15 and ChatFrame15 then ChatFrame15:AddMessage(msg);
+	if window>0 then
+		local frame = _G["ChatFrame"..window];
+		if frame then frame:AddMessage(msg); end
 	end
 end
 function StrToInt(str) -- Nope, that�s not Strength to Intelligence, but String to Integer.
@@ -1608,22 +1684,11 @@ function DD__BearAttack(key)
 	local rage = UnitMana("player");
 	local enemyhastarget = UnitExists("targettarget") and not UnitIsUnit("target","targettarget");
 	local enemyhealth = UnitHealth("target") / UnitHealthMax("target");
-	local enemyhealthlimit = 0.15; if UnitLevel("target")==-1 then enemyhealthlimit = 0.05; end
+	local enemyhealthlimit = DD__CalculateEnemyHealthLimit();
 	local enemyhasothertarget = enemyhastarget and not UnitIsUnit("player","targettarget");
 	local _,targetstarget = UnitClass("targettarget"); local tauntmob = true;
 
 	if rDD("notauntifwarrior")==true and targetstarget=="WARRIOR" then tauntmob = false; end
-
-	if DD__instanceInfo() then
-		enemyhealthlimit = enemyhealthlimit * UnitLevel("player") / (DD__instanceInfo().lvlmax + DD__instanceInfo().diff);
-	else
-		if UnitLevel("target")==-1 then
-			enemyhealthlimit = enemyhealthlimit * UnitLevel("player") / (UnitLevel("player")+10);
-		else
-			enemyhealthlimit = enemyhealthlimit * UnitLevel("player") / UnitLevel("target");
-		end
-	end
-	enemyhealthlimit = floor(100 * enemyhealthlimit) / 100;
 
 	if rDD("bear_keyexchange")==true then if key==2 then key = 4; elseif key==4 then key = 2; end end
 	if rDD("bear_autoassist")==true and UnitExists("target") and UnitIsFriend("player","target") and UnitIsEnemy("player","targettarget") then DD__AssistTarget(); end
@@ -1748,20 +1813,9 @@ function DD__CatAttack(behind,noearlyfinishers)
 	local combo_points = GetComboPoints();
 	local in_group = UnitExists("party1") or (GetNumRaidMembers() > 0);
 	local pvp = UnitIsPlayer("target");
-	local enemyhealthlimit = 0.15; if UnitLevel("target")==-1 then enemyhealthlimit = 0.05; end
+	local enemyhealthlimit = DD__CalculateEnemyHealthLimit();
 	local allowtf = true;
 	local ripORbite,rakeORclaw;
-
-	if DD__instanceInfo() then
-		enemyhealthlimit = enemyhealthlimit * UnitLevel("player") / (DD__instanceInfo().lvlmax + DD__instanceInfo().diff);
-	else
-		if UnitLevel("target")==-1 then
-			enemyhealthlimit = enemyhealthlimit * UnitLevel("player") / (UnitLevel("player")+10);
-		else
-			enemyhealthlimit = enemyhealthlimit * UnitLevel("player") / UnitLevel("target");
-		end
-	end
-	enemyhealthlimit = floor(100 * enemyhealthlimit) / 100;
 
 	timeto_kill = DD__TimeToKill();
 	local energyperclaw = 40 - DD__TalentRank(2,1) - 3*logic2value(DD__Idol==DOCDRUID[144]);
