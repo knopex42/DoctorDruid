@@ -1,12 +1,12 @@
 DOCDRUID_TITLE = "Doctor Druid"; DOCDRUID_VERSION = "v1.1.9";
 
 BINDING_HEADER_DD_HEADER =	DOCDRUID_TITLE.." "..DOCDRUID_VERSION;
-BINDING_NAME_DD29  =		DOCDRUID[155]; -- Einstellungen
-BINDING_NAME_DD1   =		DOCDRUID[1]; -- Heilende Berührung
-BINDING_NAME_DD18  =		DOCDRUID[2]; -- Heilende Berührung (ohne Rangerhöhung)
+BINDING_NAME_DD29  =		DOCDRUID[155]; -- Settings
+BINDING_NAME_DD1   =		DOCDRUID[1]; -- Heilende Berï¿½hrung
+BINDING_NAME_DD18  =		DOCDRUID[2]; -- Heilende Berï¿½hrung (ohne Rangerhï¿½hung)
 BINDING_NAME_DD2   =		DOCDRUID[3]; -- Nachwachsen
-BINDING_NAME_DD19  =		DOCDRUID[4]; -- Nachwachsen (ohne Rang-Erhöhung)
-BINDING_NAME_DD3   =		DOCDRUID[5]; -- Verjüngung
+BINDING_NAME_DD19  =		DOCDRUID[4]; -- Nachwachsen (ohne Rang-Erhï¿½hung)
+BINDING_NAME_DD3   =		DOCDRUID[5]; -- Verjï¿½ngung
 BINDING_NAME_DD20  =		DOCDRUID[67]; -- Umschalter: Maximale HOTs
 BINDING_NAME_DD4   =		DOCDRUID[6]; -- Mal der Wildnis
 BINDING_NAME_DD5   =		DOCDRUID[7]; -- Dornen
@@ -17,7 +17,7 @@ BINDING_NAME_DD32  =		DOCDRUID[175]; -- Wiedergeburt (Dynamischer Rang)
 BINDING_NAME_DD34  =		DOCDRUID[200]; -- Wiedergeburt: Gruppenhinweis
 BINDING_NAME_DD35  =		DOCDRUID[201]; -- Wiedergeburt: Schlachtgruppenhinweis
 BINDING_NAME_DD7A  =		DOCDRUID[11]; -- Anregen: Kein Hinweis
-BINDING_NAME_DD7B  =		DOCDRUID[12]; -- Anregen: Geflüsterter Hinweis
+BINDING_NAME_DD7B  =		DOCDRUID[12]; -- Anregen: Geflï¿½sterter Hinweis
 BINDING_NAME_DD7C  =		DOCDRUID[13]; -- Anregen: Gruppenhinweis
 BINDING_NAME_DD7D  =		DOCDRUID[14]; -- Anregen: Schlachtgruppenhinweis
 BINDING_NAME_DD37A =		DOCDRUID[205]; -- Selbst anregen: Kein Hinweis
@@ -25,7 +25,7 @@ BINDING_NAME_DD37B =		DOCDRUID[206]; -- Selbst anregen: Gruppenhinweis
 BINDING_NAME_DD37C =		DOCDRUID[207]; -- Selbst anregen: Schlachtgruppenhinweis
 BINDING_NAME_DD17  =		DOCDRUID[15]; -- Form: Druidengestalt
 BINDING_NAME_DD24  =		DOCDRUID[93]; -- Form: Druidengestalt + Schnelligkeit der Natur
-BINDING_NAME_DD8   =		DOCDRUID[16]; -- Form: Bärengestalt
+BINDING_NAME_DD8   =		DOCDRUID[16]; -- Form: Bï¿½rengestalt
 BINDING_NAME_DD9   =		DOCDRUID[17]; -- Form: Wassergestalt
 BINDING_NAME_DD10  =		DOCDRUID[18]; -- Form: Katzengestalt
 BINDING_NAME_DD11  =		DOCDRUID[19]; -- Form: Reisegestalt
@@ -39,12 +39,12 @@ BINDING_NAME_DD15  =		DOCDRUID[23]; -- Katze: Angriff von vorn
 BINDING_NAME_DD16  =		DOCDRUID[24]; -- Katze: Angriff von hinten
 BINDING_NAME_DD21  =		DOCDRUID[23]..DOCDRUID[87]; -- Katze: Angriff von vorn (Ohne vorzeitige Finisher)
 BINDING_NAME_DD22  =		DOCDRUID[24]..DOCDRUID[87]; -- Katze: Angriff von hinten (Ohne vorzeitige Finisher)
-BINDING_NAME_DD26  =		DOCDRUID[126]; -- Bär #1: Angriff auf einzelnes Ziel
-BINDING_NAME_DD27  =		DOCDRUID[127]; -- Bär #2: Angriff auf mehrere Ziele
-BINDING_NAME_DD28  =		DOCDRUID[128]; -- Bär #3: Spezialfähigkeit(en)
-BINDING_NAME_DD38  =		DOCDRUID[215]; -- Bär #4: Maximale Aggro-Erzeugung
-BINDING_NAME_DD39  =		DOCDRUID[216]; -- Bär #2 und #4 vertauschen
-BINDING_NAME_DD36  =		DOCDRUID[202]; -- Feenfeuer für alle Formen
+BINDING_NAME_DD26  =		DOCDRUID[126]; -- Bï¿½r #1: Angriff auf einzelnes Ziel
+BINDING_NAME_DD27  =		DOCDRUID[127]; -- Bï¿½r #2: Angriff auf mehrere Ziele
+BINDING_NAME_DD28  =		DOCDRUID[128]; -- Bï¿½r #3: Spezialfï¿½higkeit(en)
+BINDING_NAME_DD38  =		DOCDRUID[215]; -- Bï¿½r #4: Maximale Aggro-Erzeugung
+BINDING_NAME_DD39  =		DOCDRUID[216]; -- Bï¿½r #2 und #4 vertauschen
+BINDING_NAME_DD36  =		DOCDRUID[202]; -- Feenfeuer fï¿½r alle Formen
 
 function rDD(name,strflag) local value = DoctorDruid_Data[name]; if strflag then return value; elseif value=="Yes" then return true; elseif value=="No" then return false; else return value; end end
 function wDD(name,value,strflag) if value==true and not strflag then DoctorDruid_Data[name] = "Yes"; elseif value==false and not strflag then DoctorDruid_Data[name] = "No"; else DoctorDruid_Data[name] = value; end end
@@ -449,13 +449,13 @@ function DD__SHAPESHIFT(ddform)
 		icon, name, active, castable = GetShapeshiftFormInfo(i);
 
 		if active==1 then
-			-- Wenn die aktuelle Form der gewählten Form entspricht, wird nichts gemacht.
-			-- Und wenn eine Form aktiv ist, während man eine andere möchte, verwandelt man sich in die Casterform zurück.
+			-- Wenn die aktuelle Form der gewï¿½hlten Form entspricht, wird nichts gemacht.
+			-- Und wenn eine Form aktiv ist, wï¿½hrend man eine andere mï¿½chte, verwandelt man sich in die Casterform zurï¿½ck.
 			if ddform~=i then CastShapeshiftForm(i); return true; end
 			return false;
 		end
 
-		-- In jedem anderen Fall ist man in der Casterform. Hier wird festgestellt, ob die gewünschte Form erlaubt ist.
+		-- In jedem anderen Fall ist man in der Casterform. Hier wird festgestellt, ob die gewï¿½nschte Form erlaubt ist.
 		if ddform==i and castable then formallowed = true; end
 
 	end
@@ -1175,7 +1175,7 @@ function DD__PlayerIs(what)
 	elseif what=="bear" then return DD__PlayerBuff("Ability_Racial_BearForm");
 	elseif what=="travel" then return DD__PlayerBuff("Ability_Druid_TravelForm");
 	elseif what=="water" then return DD__PlayerBuff("Ability_Druid_AquaticForm");
-	-- elseif what=="moonkin" then I have absolutely no idea what´s the name of the moonkin-buff, since I´m a Feral!;
+	-- elseif what=="moonkin" then I have absolutely no idea whatï¿½s the name of the moonkin-buff, since Iï¿½m a Feral!;
 	end
 end
 
@@ -1251,8 +1251,8 @@ function dddebuffs(target)
 	end
 end
 
--- Prüft nur bis maximal 30m, die drei Heilzauber haben jedoch 40m Reichweite!
--- Wird daher vorläufig nur für ein paar wenige Zauber verwendet, die tatsächlich immer 30m Reichweite haben.
+-- Prï¿½ft nur bis maximal 30m, die drei Heilzauber haben jedoch 40m Reichweite!
+-- Wird daher vorlï¿½ufig nur fï¿½r ein paar wenige Zauber verwendet, die tatsï¿½chlich immer 30m Reichweite haben.
 function TargetInRange(target)
 	if CheckInteractDistance(target,4) or CheckInteractDistance(target,3) or CheckInteractDistance(target,2) or CheckInteractDistance(target,1) then
 		return true;
@@ -1284,7 +1284,7 @@ function DD__Print(msg,color)
 	elseif window==15 and ChatFrame15 then ChatFrame15:AddMessage(msg);
 	end
 end
-function StrToInt(str) -- Nope, that´s not Strength to Intelligence, but String to Integer.
+function StrToInt(str) -- Nope, thatï¿½s not Strength to Intelligence, but String to Integer.
 	local numbers = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
 	local converted,charisnumber,char,j = 0,0,nil,nil;
 	for i = 1,string.len(str) do
@@ -1374,7 +1374,7 @@ end
 function DD__SlashCommandHandler(msg)
 	msg = string.lower(msg);
 
-	if rDD("activateferal") then						-- Ist auch für die dynamischen Wucherwurzeln nötig.
+	if rDD("activateferal") then						-- Ist auch fï¿½r die dynamischen Wucherwurzeln nï¿½tig.
 		if msg=="catattack" then DD__CatAttack(false); return;
 		elseif msg=="attackbehind" then DD__CatAttack(true); return;
 		elseif msg=="catattack2" then DD__CatAttack(false,1); return;
@@ -1582,7 +1582,7 @@ function DD__ChallRoar()
 	if DD__HaveMana(15) then return DD__CastSpell(DOCDRUID[121]);
 	else return false; end
 end
-function DD__RasenRegen() -- Den Namen dieser Funktion widme ich den drei Gewittern vom 20.07.2006, die die 37°C etwas runtergekühlt haben! :-)
+function DD__RasenRegen() -- Den Namen dieser Funktion widme ich den drei Gewittern vom 20.07.2006, die die 37ï¿½C etwas runtergekï¿½hlt haben! :-)
 	return DD__CastSpell(DOCDRUID[129]);
 end
 
@@ -1966,20 +1966,20 @@ function DD__ResetTimer()
 	DD__start_time = GetTime();
 	DD__TryDOT,DD__TryFire2,DD__AttackCount = 0,0,0;
 
-	-- Ab hier nur fürs Bärchen - wird alles nur zurückgesetzt, wenn der Spieler
-	-- sich nicht im Kampf befindet, um die Tank-Situation auszuschließen.
+	-- Ab hier nur fï¿½rs Bï¿½rchen - wird alles nur zurï¿½ckgesetzt, wenn der Spieler
+	-- sich nicht im Kampf befindet, um die Tank-Situation auszuschlieï¿½en.
 	if not UnitAffectingCombat("player") or not DD__TryFire then
 		DD__TryFire,DD__TryRoar,DD__TryRoar2,DD__Timer.SwipeRoarCount = 0,0,0,-4;
 	end
 
-	-- Für Wucherwurzeln
+	-- Fï¿½r Wucherwurzeln
 	if not UnitAffectingCombat("player") then
 		DD__Timer.WW_StartTime,DD__Timer.WW_Count = GetTime(),0;
 	end
 end
 
 function DD__ResetTimer2()
-	-- Für Wucherwurzeln
+	-- Fï¿½r Wucherwurzeln
 	DD__Timer.WW_StartTime,DD__Timer.WW_Count = GetTime(),0;
 end
 
